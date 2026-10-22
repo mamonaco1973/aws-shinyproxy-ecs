@@ -9,7 +9,10 @@
     { "name": "us",             "gidNumber": 10002 },
     { "name": "india",          "gidNumber": 10003 },
     { "name": "linux-admins",   "gidNumber": 10004 },
-    { "name": "vscode-admins", "gidNumber": 10005 }
+    { "name": "app-admins", "gidNumber": 10005 },
+    { "name": "service-accounts", "gidNumber": 10006 },
+    { "name": "vscode-users", "gidNumber": 10007 },
+    { "name": "rstudio-users", "gidNumber": 10008 }
   ],
   "users": [
     {
@@ -20,7 +23,7 @@
       "uidNumber": 10001,
       "gidNumber": 10001,
       "primaryGroup": "${lower(NETBIOS)}-users",
-      "extraGroups": ["us", "linux-admins", "vscode-admins", "Domain Admins"]
+      "extraGroups": ["us", "linux-admins", "app-admins", "vscode-users", "rstudio-users", "Domain Admins"]
     },
     {
       "username": "edavis",
@@ -30,7 +33,7 @@
       "uidNumber": 10002,
       "gidNumber": 10001,
       "primaryGroup": "${lower(NETBIOS)}-users",
-      "extraGroups": ["us"]
+      "extraGroups": ["us", "vscode-users"]
     },
     {
       "username": "rpatel",
@@ -40,7 +43,7 @@
       "uidNumber": 10003,
       "gidNumber": 10001,
       "primaryGroup": "${lower(NETBIOS)}-users",
-      "extraGroups": ["india", "linux-admins", "vscode-admins", "Domain Admins"]
+      "extraGroups": ["india", "linux-admins", "app-admins", "vscode-users", "rstudio-users", "Domain Admins"]
     },
     {
       "username": "akumar",
@@ -50,7 +53,17 @@
       "uidNumber": 10004,
       "gidNumber": 10001,
       "primaryGroup": "${lower(NETBIOS)}-users",
-      "extraGroups": ["india"]
+      "extraGroups": ["india", "rstudio-users"]
+    },
+    {
+      "username": "shinyproxy",
+      "givenName": "ShinyProxy",
+      "surname": "Service",
+      "password": "${shinyproxy_password}",
+      "uidNumber": 10050,
+      "gidNumber": 10006,
+      "primaryGroup": "service-accounts",
+      "extraGroups": []
     }
   ]
 }

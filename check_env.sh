@@ -7,7 +7,7 @@
 #   - Verifies AWS CLI authentication and connectivity.
 #
 # Scope:
-#   - Checks for aws, terraform, and jq binaries.
+#   - Checks for aws, terraform, jq and docker binaries.
 #   - Confirms the caller identity via AWS STS.
 #
 # Fast-Fail Behavior:
@@ -18,6 +18,7 @@
 #   - AWS CLI installed and configured.
 #   - Terraform installed.
 #   - jq installed.
+#   - Docker installed, with the daemon reachable by this user.
 # ==============================================================================
 
 set -euo pipefail
@@ -27,7 +28,7 @@ set -euo pipefail
 # ------------------------------------------------------------------------------
 echo "NOTE: Validating required commands in PATH."
 
-commands=("aws" "terraform" "jq" "packer")
+commands=("aws" "terraform" "jq" "docker")
 
 for cmd in "${commands[@]}"; do
   if ! command -v "${cmd}" >/dev/null 2>&1; then
@@ -43,6 +44,13 @@ echo "NOTE: All required commands are available."
 # ------------------------------------------------------------------------------
 # AWS Connectivity Check
 # ------------------------------------------------------------------------------
+echo "NOTE: Verifying Docker daemon access..."
+docker info >/dev/null 2>&1 || {
+  echo "ERROR: Docker daemon not reachable. Start Docker or add this user to the docker group."
+  exit 1
+}
+echo "NOTE: Docker daemon reachable."
+
 echo "NOTE: Verifying AWS CLI connectivity..."
 
 aws sts get-caller-identity --query "Account" --output text >/dev/null

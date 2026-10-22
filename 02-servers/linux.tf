@@ -87,12 +87,12 @@ resource "aws_instance" "efs_gateway_instance" {
   # Executes initialization script with environment-specific parameters.
   # Script performs AD join, EFS mount, and Samba configuration.
   user_data = templatefile("./scripts/userdata.sh", {
-    admin_secret   = "admin_ad_credentials_vscode"
+    admin_secret   = "admin_ad_credentials_shinyproxy"
     domain_fqdn    = var.dns_zone
     efs_mnt_server = aws_efs_mount_target.efs_mnt_1.dns_name
     netbios        = var.netbios
     realm          = var.realm
-    force_group    = "vscode-users"
+    force_group    = "shinyproxy-users"
   })
 
   # --------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 #!/bin/bash
 # ==============================================================================
-# validate.sh - Active Directory + VS Code Cluster Validation
+# validate.sh - Active Directory + VS Code on ShinyProxy Validation
 # ==============================================================================
 # Purpose:
 #   Validates the deployed AWS lab environment by retrieving:
@@ -13,7 +13,7 @@
 #   - Instances must be tagged correctly:
 #       Name = windows-ad-admin
 #       Name = efs-samba-gateway
-#   - ALB must exist with name "vscode-alb"
+#   - ALB must exist with name "shinyproxy-alb"
 # ==============================================================================
 
 set -euo pipefail
@@ -25,7 +25,7 @@ export AWS_DEFAULT_REGION="us-east-1"
 
 echo ""
 echo "============================================================================"
-echo "VS Code AD Lab - Validation Output"
+echo "VS Code on ShinyProxy - Validation Output"
 echo "============================================================================"
 echo ""
 
@@ -51,12 +51,14 @@ linux_ip="$(aws ec2 describe-instances \
   --output text | xargs)"
 
 # ------------------------------------------------------------------------------
-# Lookup VS Code ALB
+# Lookup ShinyProxy ALB
 # ------------------------------------------------------------------------------
+# describe-load-balancers --names errors (rather than returning empty) when
+# the ALB does not exist; let the "not found" branch below report it.
 alb_dns="$(aws elbv2 describe-load-balancers \
-  --names vscode-alb \
+  --names shinyproxy-alb \
   --query 'LoadBalancers[0].DNSName' \
-  --output text | xargs)"
+  --output text 2>/dev/null | xargs || true)"
 
 # ------------------------------------------------------------------------------
 # Pretty Aligned Output (Only formatting improvement)
@@ -94,31 +96,51 @@ fi
 
 # ALB
 if [ -z "${alb_dns}" ] || [ "${alb_dns}" = "None" ]; then
-  print_line "VS Code ALB Endpoint" \
-    "WARNING: vscode-alb not found"
+  print_line "ShinyProxy ALB Endpoint" \
+    "WARNING: shinyproxy-alb not found"
 else
-  print_line "VS Code URL" "https://${alb_dns}"
+  print_line "ShinyProxy URL" "https://${alb_dns}"
 
   # ----------------------------------------------------------------------------
-  # Broker Reachability Check
+  # ShinyProxy Reachability Check
   # ----------------------------------------------------------------------------
   # -k is required: the ALB presents a self-signed certificate, so curl would
   # otherwise refuse the connection. Targets can take a few minutes to pass
   # health checks after apply, so a failure here is not necessarily fatal.
   health="$(curl -sk -o /dev/null -w '%{http_code}' --max-time 10 \
-    "https://${alb_dns}/healthz" || true)"
+    "https://${alb_dns}/login" || true)"
 
   if [ "${health}" = "200" ]; then
-    print_line "Session Broker" "healthy (/healthz returned 200)"
+    print_line "ShinyProxy" "healthy (/login returned 200)"
   else
-    print_line "Session Broker" \
-      "WARNING: /healthz returned '${health}' - targets may still be booting"
+    print_line "ShinyProxy" \
+      "WARNING: /login returned '${health}' - targets may still be booting"
   fi
+fi
+
+# ------------------------------------------------------------------------------
+# Test User Credentials
+# ------------------------------------------------------------------------------
+# Lab convenience: prints a real password to the terminal. The secret stores
+# the down-level name (SHINYPROXY\jsmith); ShinyProxy expects the bare username.
+jsmith_secret="$(aws secretsmanager get-secret-value \
+  --secret-id jsmith_ad_credentials_shinyproxy \
+  --query SecretString \
+  --output text 2>/dev/null || true)"
+
+if [ -z "${jsmith_secret}" ]; then
+  print_line "jsmith Credentials" \
+    "WARNING: jsmith_ad_credentials_shinyproxy not found"
+else
+  print_line "jsmith Username" \
+    "$(echo "${jsmith_secret}" | jq -r '.username' | sed 's/.*\\//')"
+  print_line "jsmith Password" \
+    "$(echo "${jsmith_secret}" | jq -r '.password')"
 fi
 
 echo ""
 echo "NOTE: Sign in with an AD account (e.g. jsmith or rpatel)."
-echo "NOTE: Passwords are stored in Secrets Manager as <user>_ad_credentials_vscode."
+echo "NOTE: Passwords are stored in Secrets Manager as <user>_ad_credentials_shinyproxy."
 echo ""
 echo "NOTE: The ALB uses a self-signed certificate. Browsers will warn once —"
 echo "      choose Advanced then Proceed. This is expected."

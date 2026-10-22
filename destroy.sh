@@ -4,131 +4,119 @@
 # ================================================================================
 #
 # Purpose:
-#   Orchestrate controlled teardown of Active Directory and dependent
-#   VS Code infrastructure.
+#   Tear down the VS Code on ShinyProxy lab in reverse dependency order.
 #
-# Teardown Order:
-#     1. Destroy VS Code autoscaling cluster.
-#     2. Deregister project AMIs and delete associated snapshots.
-#     3. Destroy dependent EC2 servers.
-#     4. Delete AD-related Secrets Manager entries.
-#     5. Destroy Active Directory Domain Controller.
-#
-# Design Principles:
-#   - Reverse dependency order to prevent orphaned resources.
-#   - Fail-fast behavior for safe teardown.
-#   - Permanent deletion of secrets (no recovery window).
-#
-# Requirements:
-#   - AWS CLI configured and authenticated.
-#   - Terraform installed and initialized per module.
-#
-# Exit Codes:
-#   0 = Success
-#   1 = Missing directories or Terraform/AWS CLI error
+# Teardown Flow:
+#     1. Stop any session tasks still running, and remove the per-session
+#        task definitions ShinyProxy registered outside Terraform.
+#     2. Destroy the ECS cluster, ShinyProxy service and ALB.
+#     3. Destroy the ECR repositories (images included).
+#     4. Destroy EFS and admin servers.
+#     5. Delete Secrets Manager entries, then the domain controller and VPC.
 #
 # ================================================================================
 
 set -euo pipefail
 
-
-# ================================================================================
-# SECTION: Configuration
-# ================================================================================
-
 export AWS_DEFAULT_REGION="us-east-1"
 
+CLUSTER="shinyproxy"
+
 
 # ================================================================================
-# PHASE 1: Destroy VS Code Autoscaling Cluster
+# PHASE 1: Session Tasks and Task Definitions
 # ================================================================================
 
-echo "NOTE: Destroying VS Code Cluster..."
+# ShinyProxy stops its sessions on a clean shutdown, but a crashed or
+# force-stopped ShinyProxy leaves them running, and ECS refuses to delete a
+# cluster that still has tasks.
+if aws ecs describe-clusters --clusters "$CLUSTER" \
+     --query "clusters[?status=='ACTIVE'].clusterName" --output text | grep -q .; then
+  echo "NOTE: Scaling ShinyProxy to zero..."
+  aws ecs update-service --cluster "$CLUSTER" --service shinyproxy \
+    --desired-count 0 >/dev/null 2>&1 || true
 
-cd 04-cluster || {
-  echo "ERROR: Directory 04-cluster not found"
-  exit 1
-}
+  for task in $(aws ecs list-tasks --cluster "$CLUSTER" \
+                  --query "taskArns[]" --output text); do
+    echo "NOTE: Stopping task: ${task##*/}"
+    aws ecs stop-task --cluster "$CLUSTER" --task "$task" >/dev/null
+  done
+fi
 
+echo "NOTE: Removing ShinyProxy session task definitions..."
+for td in $(aws ecs list-task-definitions --family-prefix sp-task-definition- \
+              --status ACTIVE --query "taskDefinitionArns[]" --output text); do
+  aws ecs deregister-task-definition --task-definition "$td" >/dev/null
+done
+
+inactive=$(aws ecs list-task-definitions --family-prefix sp-task-definition- \
+             --status INACTIVE --query "taskDefinitionArns[]" --output text)
+if [ -n "$inactive" ]; then
+  # delete-task-definitions accepts at most 10 ARNs per call.
+  echo "$inactive" | tr '\t' '\n' | xargs -n 10 \
+    aws ecs delete-task-definitions --task-definitions >/dev/null
+fi
+
+
+# ================================================================================
+# PHASE 2: ECS Cluster and ShinyProxy
+# ================================================================================
+
+echo "NOTE: Destroying ECS cluster and ShinyProxy service..."
+
+cd 04-ecs
 terraform init
 terraform destroy -auto-approve
 cd ..
 
 
 # ================================================================================
-# PHASE 2: Deregister AMIs and Delete Snapshots
+# PHASE 3: Container Images
 # ================================================================================
 
-echo "NOTE: Deregistering project AMIs and deleting snapshots..."
+echo "NOTE: Destroying ECR repositories..."
 
-for ami_id in $(aws ec2 describe-images \
-  --owners self \
-  --filters "Name=name,Values=vscode_ami*" \
-  --query "Images[].ImageId" \
-  --output text); do
-
-  for snapshot_id in $(aws ec2 describe-images \
-    --image-ids "$ami_id" \
-    --query "Images[].BlockDeviceMappings[].Ebs.SnapshotId" \
-    --output text); do
-
-    echo "NOTE: Deregistering AMI: $ami_id"
-    aws ec2 deregister-image --image-id "$ami_id"
-
-    echo "NOTE: Deleting snapshot: $snapshot_id"
-    aws ec2 delete-snapshot --snapshot-id "$snapshot_id"
-  done
-done
+cd 03-images
+terraform init
+terraform destroy -auto-approve
+cd ..
 
 
 # ================================================================================
-# PHASE 3: Destroy EC2 Server Instances
+# PHASE 4: EFS and Admin Servers
 # ================================================================================
 
 echo "NOTE: Destroying EC2 server instances..."
 
-cd 02-servers || {
-  echo "ERROR: Directory 02-servers not found"
-  exit 1
-}
-
+cd 02-servers
 terraform init
 terraform destroy -auto-approve
 cd ..
 
 
 # ================================================================================
-# PHASE 4: Delete AD Secrets and Destroy Domain Controller
+# PHASE 5: Secrets and Active Directory
 # ================================================================================
 
 echo "NOTE: Deleting AD-related Secrets Manager entries..."
 
 for secret in \
-  akumar_ad_credentials_vscode \
-  jsmith_ad_credentials_vscode \
-  edavis_ad_credentials_vscode \
-  rpatel_ad_credentials_vscode \
-  admin_ad_credentials_vscode; do
-
+  akumar_ad_credentials_shinyproxy \
+  jsmith_ad_credentials_shinyproxy \
+  edavis_ad_credentials_shinyproxy \
+  rpatel_ad_credentials_shinyproxy \
+  admin_ad_credentials_shinyproxy \
+  shinyproxy_ldap_credentials; do
   aws secretsmanager delete-secret \
     --secret-id "$secret" \
-    --force-delete-without-recovery
+    --force-delete-without-recovery || true
 done
 
 echo "NOTE: Destroying Active Directory instance..."
 
-cd 01-directory || {
-  echo "ERROR: Directory 01-directory not found"
-  exit 1
-}
-
+cd 01-directory
 terraform init
 terraform destroy -auto-approve
 cd ..
-
-
-# ================================================================================
-# SECTION: Completion
-# ================================================================================
 
 echo "NOTE: Infrastructure teardown complete."

@@ -70,10 +70,10 @@ resource "aws_instance" "windows_ad_instance" {
   #   - Integration with Samba/EFS gateway
   #   - RDP group configuration
   user_data = templatefile("./scripts/userdata.ps1", {
-    admin_secret = "admin_ad_credentials_vscode"
+    admin_secret = "admin_ad_credentials_shinyproxy"
     domain_fqdn  = var.dns_zone
     samba_server = aws_instance.efs_gateway_instance.private_dns
-    rdp_group    = "vscode-users"
+    rdp_group    = "shinyproxy-users"
     netbios      = var.netbios
   })
 

@@ -16,7 +16,7 @@
 # Operational Notes:
 #   - NAT and route associations must exist before instance bootstrap.
 #   - users_json is rendered at apply time and passed to cloud-init.
-#   - Passwords originate from random_password resources in accounts.tf.
+#   - Passwords originate from accounts.tf (random admin, word-number users).
 #
 # ================================================================================
 
@@ -27,7 +27,7 @@
 
 # Provision Ubuntu-based AD Domain Controller using reusable module.
 module "mini_ad" {
-  source            = "github.com/mamonaco1973/module-aws-mini-ad"
+  source            = "github.com/mamonaco1973/module-aws-mini-ad?ref=sentinel"
   netbios           = var.netbios
   vpc_id            = aws_vpc.ad-vpc.id
   realm             = var.realm
@@ -53,13 +53,14 @@ module "mini_ad" {
 # Inject randomized passwords and directory context values at apply time.
 locals {
   users_json = templatefile("./scripts/users.json.template", {
-    USER_BASE_DN    = var.user_base_dn
-    DNS_ZONE        = var.dns_zone
-    REALM           = var.realm
-    NETBIOS         = var.netbios
-    jsmith_password = random_password.jsmith_password.result
-    edavis_password = random_password.edavis_password.result
-    rpatel_password = random_password.rpatel_password.result
-    akumar_password = random_password.akumar_password.result
+    USER_BASE_DN        = var.user_base_dn
+    DNS_ZONE            = var.dns_zone
+    REALM               = var.realm
+    NETBIOS             = var.netbios
+    jsmith_password     = local.passwords["jsmith"]
+    edavis_password     = local.passwords["edavis"]
+    rpatel_password     = local.passwords["rpatel"]
+    akumar_password     = local.passwords["akumar"]
+    shinyproxy_password = random_password.shinyproxy_password.result
   })
 }

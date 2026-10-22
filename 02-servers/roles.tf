@@ -101,6 +101,6 @@ resource "aws_iam_role_policy_attachment" "attach_secrets_policy" {
 
 # Instance profile binds IAM role for EC2 association.
 resource "aws_iam_instance_profile" "ec2_secrets_profile" {
-  name = "tf-secrets-profile-${lower(var.netbios)}"
+  name = "tf-secrets-profile-${local.iam_id}"
   role = aws_iam_role.ec2_secrets_role.name
 }
