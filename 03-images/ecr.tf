@@ -4,9 +4,9 @@
 #
 # Purpose:
 #   Create the ECR repositories this project pushes to:
-#     - vscode-session  : one container per user's VS Code session
-#     - rstudio-session : one container per user's RStudio session
-#     - shinyproxy      : ShinyProxy with this project's configuration
+#     - vscode-session-ecs  : one container per user's VS Code session
+#     - rstudio-session-ecs : one container per user's RStudio session
+#     - shinyproxy-ecs      : ShinyProxy with this project's configuration
 #
 # Design:
 #   - Images are built and pushed by apply.sh with the local Docker daemon;
@@ -17,7 +17,7 @@
 # ================================================================================
 
 resource "aws_ecr_repository" "vscode_session" {
-  name                 = "vscode-session"
+  name                 = "vscode-session-ecs"
   image_tag_mutability = "MUTABLE"
   force_delete         = true
 
@@ -27,7 +27,7 @@ resource "aws_ecr_repository" "vscode_session" {
 }
 
 resource "aws_ecr_repository" "rstudio_session" {
-  name                 = "rstudio-session"
+  name                 = "rstudio-session-ecs"
   image_tag_mutability = "MUTABLE"
   force_delete         = true
 
@@ -37,7 +37,7 @@ resource "aws_ecr_repository" "rstudio_session" {
 }
 
 resource "aws_ecr_repository" "shinyproxy" {
-  name                 = "shinyproxy"
+  name                 = "shinyproxy-ecs"
   image_tag_mutability = "MUTABLE"
   force_delete         = true
 

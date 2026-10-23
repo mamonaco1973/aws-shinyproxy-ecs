@@ -20,7 +20,7 @@ set -euo pipefail
 
 export AWS_DEFAULT_REGION="us-east-1"
 
-CLUSTER="shinyproxy"
+CLUSTER="shinyproxy-ecs"
 
 
 # ================================================================================
@@ -101,12 +101,12 @@ cd ..
 echo "NOTE: Deleting AD-related Secrets Manager entries..."
 
 for secret in \
-  akumar_ad_credentials_shinyproxy \
-  jsmith_ad_credentials_shinyproxy \
-  edavis_ad_credentials_shinyproxy \
-  rpatel_ad_credentials_shinyproxy \
-  admin_ad_credentials_shinyproxy \
-  shinyproxy_ldap_credentials; do
+  akumar_ad_credentials_shinyproxy_ecs \
+  jsmith_ad_credentials_shinyproxy_ecs \
+  edavis_ad_credentials_shinyproxy_ecs \
+  rpatel_ad_credentials_shinyproxy_ecs \
+  admin_ad_credentials_shinyproxy_ecs \
+  shinyproxy_ecs_ldap_credentials; do
   aws secretsmanager delete-secret \
     --secret-id "$secret" \
     --force-delete-without-recovery || true

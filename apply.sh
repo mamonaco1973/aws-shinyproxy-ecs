@@ -128,7 +128,7 @@ terraform init
 terraform apply -auto-approve -var "image_tag=${image_tag}"
 
 echo "NOTE: Waiting for the ShinyProxy service to stabilize..."
-aws ecs wait services-stable --cluster shinyproxy --services shinyproxy
+aws ecs wait services-stable --cluster shinyproxy-ecs --services shinyproxy
 cd ..
 
 

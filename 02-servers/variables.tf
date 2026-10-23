@@ -24,11 +24,11 @@
 # ================================================================================
 
 # Fully Qualified Domain Name used for AD DNS namespace.
-# Example: shinyproxy.mikecloud.com
+# Example: shinyproxyecs.mikecloud.com
 variable "dns_zone" {
   description = "Active Directory DNS zone (FQDN)"
   type        = string
-  default     = "shinyproxy.mikecloud.com"
+  default     = "shinyproxyecs.mikecloud.com"
 }
 
 
@@ -37,11 +37,11 @@ variable "dns_zone" {
 # ================================================================================
 
 # Kerberos realm value. Conventionally matches dns_zone in uppercase.
-# Example: SHINYPROXY.MIKECLOUD.COM
+# Example: SHINYPROXYECS.MIKECLOUD.COM
 variable "realm" {
   description = "Kerberos realm (uppercase DNS zone)"
   type        = string
-  default     = "SHINYPROXY.MIKECLOUD.COM"
+  default     = "SHINYPROXYECS.MIKECLOUD.COM"
 }
 
 
@@ -51,11 +51,11 @@ variable "realm" {
 
 # Legacy NetBIOS-compatible short domain name.
 # Typically uppercase, alphanumeric, <= 15 characters.
-# Example: SHINYPROXY
+# Example: SHINYPROXYECS
 variable "netbios" {
   description = "NetBIOS short domain name"
   type        = string
-  default     = "SHINYPROXY"
+  default     = "SHINYPROXYECS"
 }
 
 
@@ -67,5 +67,5 @@ variable "netbios" {
 variable "vpc_name" {
   description = "Name for the VPC resource"
   type        = string
-  default     = "shinyproxy-vpc"
+  default     = "shinyproxy-ecs-vpc"
 }

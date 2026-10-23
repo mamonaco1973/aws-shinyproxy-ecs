@@ -25,7 +25,7 @@
 variable "dns_zone" {
   description = "Active Directory DNS zone (FQDN)"
   type        = string
-  default     = "shinyproxy.mikecloud.com"
+  default     = "shinyproxyecs.mikecloud.com"
 }
 
 
@@ -36,7 +36,7 @@ variable "dns_zone" {
 variable "realm" {
   description = "Kerberos realm (uppercase DNS zone)"
   type        = string
-  default     = "SHINYPROXY.MIKECLOUD.COM"
+  default     = "SHINYPROXYECS.MIKECLOUD.COM"
 }
 
 
@@ -47,7 +47,7 @@ variable "realm" {
 variable "netbios" {
   description = "NetBIOS short domain name"
   type        = string
-  default     = "SHINYPROXY"
+  default     = "SHINYPROXYECS"
 }
 
 
@@ -58,7 +58,7 @@ variable "netbios" {
 variable "vpc_name" {
   description = "Name for the VPC resource"
   type        = string
-  default     = "shinyproxy-vpc"
+  default     = "shinyproxy-ecs-vpc"
 }
 
 
@@ -70,14 +70,14 @@ variable "vpc_name" {
 variable "base_dn" {
   description = "LDAP base distinguished name of the domain"
   type        = string
-  default     = "DC=shinyproxy,DC=mikecloud,DC=com"
+  default     = "DC=shinyproxyecs,DC=mikecloud,DC=com"
 }
 
 # Container under which the mini-AD module creates users and groups.
 variable "user_base_dn" {
   description = "LDAP user base distinguished name"
   type        = string
-  default     = "CN=Users,DC=shinyproxy,DC=mikecloud,DC=com"
+  default     = "CN=Users,DC=shinyproxyecs,DC=mikecloud,DC=com"
 }
 
 

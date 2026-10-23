@@ -94,7 +94,7 @@ data "aws_instance" "domain_controller" {
 }
 
 data "aws_secretsmanager_secret" "shinyproxy_ldap" {
-  name = "shinyproxy_ldap_credentials"
+  name = "shinyproxy_ecs_ldap_credentials"
 }
 
 
@@ -104,20 +104,20 @@ data "aws_secretsmanager_secret" "shinyproxy_ldap" {
 
 data "aws_efs_file_system" "efs" {
   tags = {
-    Name = "shinyproxy-efs"
+    Name = "shinyproxy-ecs-efs"
   }
 }
 
 data "aws_ecr_repository" "vscode_session" {
-  name = "vscode-session"
+  name = "vscode-session-ecs"
 }
 
 data "aws_ecr_repository" "rstudio_session" {
-  name = "rstudio-session"
+  name = "rstudio-session-ecs"
 }
 
 data "aws_ecr_repository" "shinyproxy" {
-  name = "shinyproxy"
+  name = "shinyproxy-ecs"
 }
 
 
@@ -133,5 +133,5 @@ locals {
   rstudio_image    = "${data.aws_ecr_repository.rstudio_session.repository_url}:${var.image_tag}"
   shinyproxy_image = "${data.aws_ecr_repository.shinyproxy.repository_url}:${var.image_tag}"
 
-  cluster_name = "shinyproxy"
+  cluster_name = "shinyproxy-ecs"
 }

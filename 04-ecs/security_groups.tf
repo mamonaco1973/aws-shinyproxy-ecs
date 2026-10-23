@@ -15,7 +15,7 @@
 # ================================================================================
 
 resource "aws_security_group" "alb_sg" {
-  name        = "shinyproxy-alb-sg"
+  name        = "shinyproxy-ecs-alb-sg"
   description = "Allow HTTP (redirect) and HTTPS to the ALB"
   vpc_id      = data.aws_vpc.ad_vpc.id
 

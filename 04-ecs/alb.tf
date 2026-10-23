@@ -16,7 +16,7 @@
 # ================================================================================
 
 resource "aws_lb" "shinyproxy_alb" {
-  name               = "shinyproxy-alb"
+  name               = "shinyproxy-ecs-alb"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb_sg.id]
@@ -29,7 +29,7 @@ resource "aws_lb" "shinyproxy_alb" {
 }
 
 resource "aws_lb_target_group" "shinyproxy_tg" {
-  name        = "shinyproxy-tg"
+  name        = "shinyproxy-ecs-tg"
   port        = 8080
   protocol    = "HTTP"
   target_type = "ip"
