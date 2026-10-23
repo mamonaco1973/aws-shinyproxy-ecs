@@ -40,8 +40,8 @@ Every name this lab creates (VPC, AD domain, secrets, ECR repositories, load bal
 ## Download this Repository
 
 ```bash
-git clone https://github.com/mamonaco1973/aws-vscode-shinyproxy.git
-cd aws-vscode-shinyproxy
+git clone https://github.com/mamonaco1973/aws-shinyproxy-ecs.git
+cd aws-shinyproxy-ecs
 ```
 
 ## Build the Code
@@ -49,7 +49,7 @@ cd aws-vscode-shinyproxy
 Run [check_env](check_env.sh) to validate your environment, then run [apply](apply.sh) to provision the infrastructure.
 
 ```bash
-develop-vm:~/aws-vscode-shinyproxy$ ./apply.sh
+develop-vm:~/aws-shinyproxy-ecs$ ./apply.sh
 NOTE: Validating required commands in PATH.
 NOTE: Found required command: aws
 NOTE: Found required command: terraform
@@ -133,7 +133,7 @@ ShinyProxy runs as an ECS service with a single task. Its configuration is [03-i
 
 - **Launch.** For each session ShinyProxy registers a one-off task definition (`sp-task-definition-<id>`), calls `RunTask` into the private subnets, waits for the task to reach `RUNNING`, and proxies `/app_proxy/<id>/` to the task's private IP on the app's port. A cold start takes about 40 seconds for VS Code; RStudio's image is several times larger, so it takes longer. Most of that is Fargate provisioning the task and pulling the image.
 - **Lifetime.** The ShinyProxy page sends heartbeats while the tab is open. A session is stopped 30 minutes after the last one (tab closed, laptop asleep) and in any case after 12 hours. Stopping a session stops its task and deletes its task definition.
-- **Sign out.** ShinyProxy's own title bar sits above every app, so no button has to be injected into the apps themselves.
+- **Navigation and sign-out.** ShinyProxy's own title bar sits above every app, so no button has to be injected into the apps themselves. **Apps** returns to the app list and leaves the session running (opening the app again resumes it), **Stop session** ends it, and **Sign out** signs out.
 
 ### Look and Feel
 
@@ -142,8 +142,8 @@ ShinyProxy's pages are replaced by VS Code-styled ones in [03-images/shinyproxy/
 | File | Page |
 |------|------|
 | `login.html` | Sign-in card. The visible form never submits; `signin.js` copies the credentials into a hidden form, because carrier phishing filters block a plain password form on an `*.elb.amazonaws.com` hostname |
-| `fragments/navbar.html` | Title bar on every signed-in page; also loads `assets/vscode.css`, so the app list and admin pages are re-themed without copying them |
-| `app.html` | Copy of ShinyProxy 3.2.4's app page with a "Starting your session" card; re-copy it when upgrading ShinyProxy |
+| `fragments/navbar.html` | Title bar on every signed-in page, with an **Apps** button back to the app list on app pages; also loads `assets/vscode.css`, so the app list and admin pages are re-themed without copying them |
+| `app.html` | Copy of ShinyProxy 3.2.4's app page with a "Starting your session" card, and a **Back to apps** link on the stopped, paused, crashed and failed screens; re-copy it when upgrading ShinyProxy and carry those changes over |
 | `error.html`, `auth-error.html`, `app-access-denied.html`, `logout-success.html` | Error and status cards |
 
 ### The Session Images
@@ -180,7 +180,7 @@ RStudio keeps its user state (`~/.config/rstudio`, `~/.local/share/rstudio`) and
 These are deliberate choices, not oversights:
 
 - **One ShinyProxy task.** ShinyProxy holds session state in memory, and its ECS backend cannot re-adopt running tasks after a restart. On shutdown it stops every session rather than orphan them, so a ShinyProxy restart or redeploy signs everyone out. Running two would need Redis (`proxy.store-mode: Redis`). The service is configured so the old task is gone before a new one starts — two ShinyProxies must never manage the same sessions.
-- **Cold starts instead of idle capacity.** Every session starts a fresh Fargate task, about 50 seconds. Nothing is held warm, which is what lets the cluster scale to zero.
+- **Cold starts instead of idle capacity.** Every session starts a fresh Fargate task, about 40 seconds for VS Code and longer for RStudio. Nothing is held warm, which is what lets the cluster scale to zero.
 - **Pay per session-hour.** Fargate bills for each task while it runs. That favors bursty use; many all-day users may be cheaper on reserved EC2 capacity.
 - **Ephemeral local disk.** Anything outside `/home` and `/efs` — including packages installed with `sudo apt` — is lost when the task stops. Add tools to the app's Dockerfile instead.
 - **No task role on sessions.** The apps have no reason to call AWS, and a role would hand every user its credentials.
@@ -257,9 +257,9 @@ All groups are Security / Universal, created in `CN=Users` of the `shinyproxyecs
 
 | Username   | Full Name          | uidNumber | gidNumber | Groups Joined | Apps |
 |------------|--------------------|-----------|-----------|---------------|------|
-| jsmith     | John Smith         | 10001     | 10001     | us, linux-admins, app-admins, vscode-users, rstudio-users | All |
+| jsmith     | John Smith         | 10001     | 10001     | us, linux-admins, app-admins, vscode-users, rstudio-users, Domain Admins | All |
 | edavis     | Emily Davis        | 10002     | 10001     | us, vscode-users | VS Code |
-| rpatel     | Raj Patel          | 10003     | 10001     | india, linux-admins, app-admins, vscode-users, rstudio-users | All |
+| rpatel     | Raj Patel          | 10003     | 10001     | india, linux-admins, app-admins, vscode-users, rstudio-users, Domain Admins | All |
 | akumar     | Amit Kumar         | 10004     | 10001     | india, rstudio-users | RStudio |
 | shinyproxy | ShinyProxy Service | 10050     | 10006     | service-accounts | None |
 

@@ -1,12 +1,12 @@
 #!/bin/bash
 # ==============================================================================
-# validate.sh - Active Directory + VS Code on ShinyProxy Validation
+# validate.sh - Active Directory + ShinyProxy on ECS Validation
 # ==============================================================================
 # Purpose:
 #   Validates the deployed AWS lab environment by retrieving:
 #     - Windows AD Administration host (public DNS for RDP access)
 #     - Linux EFS/Samba gateway host (public DNS / public IP)
-#     - VS Code Application Load Balancer endpoint (HTTPS)
+#     - ShinyProxy Application Load Balancer endpoint (HTTPS)
 #
 # Notes:
 #   - Requires AWS CLI configured with appropriate permissions.
@@ -25,7 +25,7 @@ export AWS_DEFAULT_REGION="us-east-1"
 
 echo ""
 echo "============================================================================"
-echo "VS Code on ShinyProxy - Validation Output"
+echo "ShinyProxy on ECS - Validation Output"
 echo "============================================================================"
 echo ""
 

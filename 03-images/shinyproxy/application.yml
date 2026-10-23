@@ -45,9 +45,6 @@ proxy:
   heartbeat-timeout: 1800000
   default-proxy-max-lifetime: 720
 
-  # A cold Fargate start pulls a ~1 GB image; give it time.
-  container-wait-time: 300000
-
   # app-admins see every running session under /admin.
   admin-groups: app-admins
 
@@ -77,6 +74,7 @@ proxy:
     region: ${AWS_REGION}
     subnets: ${SESSION_SUBNETS}
     security-groups: ${SESSION_SECURITY_GROUPS}
+    # A cold Fargate start pulls a ~1 GB image; wait up to five minutes.
     service-wait-time: 300000
     enable-cloud-watch: true
     cloud-watch-group-prefix: /ecs/shinyproxy/

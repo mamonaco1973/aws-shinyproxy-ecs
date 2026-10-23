@@ -4,7 +4,7 @@
 # ================================================================================
 #
 # Purpose:
-#   Tear down the VS Code on ShinyProxy lab in reverse dependency order.
+#   Tear down the ShinyProxy on ECS lab in reverse dependency order.
 #
 # Teardown Flow:
 #     1. Stop any session tasks still running, and remove the per-session
