@@ -242,7 +242,7 @@ When the domain controller is provisioned, a set of sample **users** and **group
 
 | Group Name       | gidNumber | Purpose |
 |------------------|-----------|---------|
-| shinyproxy-users | 10001     | Every user's primary group; grants Samba/RDP access on the admin hosts |
+| shinyproxyecs-users | 10001 | Every user's primary group; grants Samba/RDP access on the admin hosts |
 | us               | 10002     | Sample regional group |
 | india            | 10003     | Sample regional group |
 | linux-admins     | 10004     | sudo inside sessions |
